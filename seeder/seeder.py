@@ -6,11 +6,11 @@ from faker import Faker
 fake = Faker()
 
 API_URL = "http://localhost:3200"  
-TIPOS = ['LED', 'Halógena', 'Incandescente']
-ESTADOS = ['encendida', 'apagada', 'fallando']
-FIRMWARES = ['v1.0.0', 'v1.2.3', 'v2.0.1']
-ESTADOS_RED = ['estable', 'inestable', 'sin conexión']
-RESPONSABLES = ['Carlos Rodríguez', 'Ana Gómez', 'Luis Pérez']
+TIPOS = ['LED', 'Halógena', 'Incandescente','NULL']
+ESTADOS = ['encendida', 'apagada', 'fallando','NULL']
+FIRMWARES = ['v1.0.0', 'v1.2.3', 'v2.0.1','NULL']
+ESTADOS_RED = ['estable', 'inestable', 'sin conexión','NULL']
+RESPONSABLES = ['Carlos Rodríguez', 'Ana Gómez', 'Luis Pérez','NULL']
 
 
 def generar_identificador(estado, ciudad, fecha, lat, lng, secuencial):
