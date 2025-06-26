@@ -73,3 +73,22 @@ export const deleteLuminaria = (req, res) => {
             res.status(500).json({ status: "Server unavailable" });
         });
 };
+
+
+// Insertar múltiples luminarias en lote (batch)
+export const insertLuminariasBatch = (req, res) => {
+    const luminarias = req.body;
+
+    if (!Array.isArray(luminarias)) {
+        return res.status(400).json({ status: "Bad request: se esperaba un array de luminarias" });
+    }
+
+    luminariaDAO.insertManyLuminarias(luminarias)
+        .then(result => {
+            res.status(201).json({ status: "Luminarias insertadas", cantidad: result.length });
+        })
+        .catch(err => {
+            console.error(err);
+            res.status(500).json({ status: "Error al insertar luminarias" });
+        });
+};

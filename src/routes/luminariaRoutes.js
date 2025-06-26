@@ -3,6 +3,7 @@ import {
   getAllLuminarias,
   getOneLuminaria,
   insertLuminaria,
+  insertLuminariasBatch, 
   updateLuminaria,
   deleteLuminaria
 } from "../controllers/luminariaController.js";
@@ -10,10 +11,11 @@ import {
 const router = express.Router();
 
 // Rutas para luminarias
-router.get("/", getAllLuminarias); // Obtener todas
-router.get("/:identificador", getOneLuminaria); // Obtener una por identificador
-router.post("/", insertLuminaria); // Crear nueva
-router.put("/:identificador", updateLuminaria); // Actualizar por identificador
-router.delete("/:identificador", deleteLuminaria); // Eliminar por identificador
+router.get("/", getAllLuminarias);
+router.get("/:identificador", getOneLuminaria);
+router.post("/", insertLuminaria);
+router.post("/batch", insertLuminariasBatch);  
+router.put("/:identificador", updateLuminaria);
+router.delete("/:identificador", deleteLuminaria);
 
 export default router;

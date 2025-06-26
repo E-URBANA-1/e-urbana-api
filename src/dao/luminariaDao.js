@@ -34,6 +34,12 @@ luminariaDAO.deleteLuminaria = async (identificador) => {
     return luminariaDeleted !== null
 }
 
-// Consultar luminarias con filtro//
+
+// Insertar en batch varias luminarias
+luminariaDAO.insertManyLuminarias = async (luminarias) => {
+    const inserted = await Luminaria.insertMany(luminarias);
+    return inserted;
+};
+
 
 export default luminariaDAO
