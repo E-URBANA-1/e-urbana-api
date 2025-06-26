@@ -3,48 +3,68 @@ import requests
 from datetime import datetime
 from faker import Faker
 from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor
 
 fake = Faker()
 
-API_URL = "http://localhost:3200"   
-BATCH_SIZE = 1000
+API_URL = "http://localhost:3200/batch"  
+TOTAL = 800000
+BATCH_SIZE = 5000
+NUM_THREADS = 8
+
+ESTADOS_MX = {
+    'Ags': ['ags'], 'BC': ['tj', 'mc'], 'BCS': ['lpz'], 'Camp': ['cam'],
+    'Coah': ['slc', 'tor'], 'Col': ['col'], 'Chis': ['tuxt'], 'Chih': ['chih', 'ju'],
+    'CDMX': ['cx'], 'Dgo': ['dgo'], 'Gto': ['leo', 'ira'], 'Gro': ['aca', 'chil'],
+    'Hgo': ['pach'], 'Jal': ['gd', 'zap'], 'Méx': ['tol', 'nez'], 'Mich': ['morelia'],
+    'Mor': ['cuernavaca'], 'Nay': ['tep'], 'NL': ['mty'], 'Oax': ['oax'],
+    'Qro': ['qro'], 'QR': ['cancun', 'chetumal'], 'SLP': ['slp'], 'Sin': ['cul', 'mochi'],
+    'Son': ['herm', 'nog'], 'Tab': ['villah'], 'Tamps': ['tampico', 'reynosa'],
+    'Tlax': ['tlax'], 'Ver': ['ver', 'coatza'], 'Yuc': ['mda'], 'Zac': ['zac'],'NULL': ['NULL']
+}
 
 TIPOS = ['LED', 'Halógena', 'Incandescente', 'NULL']
 ESTADOS = ['encendida', 'apagada', 'fallando', 'NULL']
 FIRMWARES = ['v1.0.0', 'v1.2.3', 'v2.0.1', 'NULL']
 ESTADOS_RED = ['estable', 'inestable', 'sin conexión', 'NULL']
+RESPONSABLES = [ "NULL",
+  "Juan Pérez", "María González", "José Hernández", "Ana Martínez", "Luis López",
+  "Laura Rodríguez", "Carlos Sánchez", "Sofía Ramírez", "Miguel Torres", "Lucía Flores",
+  "Diego Morales", "Camila Reyes", "Fernando Cruz", "Valeria Ortiz", "Javier Castillo",
+  "Paola Mendoza", "Andrés Romero", "Fernanda Vargas", "Emilio Herrera", "Daniela Ríos",
+  "Alejandro Navarro", "Isabel Guzmán", "Ricardo Domínguez", "Gabriela Aguilar", "Eduardo Salinas",
+  "Diana Cordero", "Manuel Pacheco", "Andrea Cabrera", "Raúl Jiménez", "Patricia Soto",
+  "Héctor Carrillo", "Monserrat Peña", "Francisco Vázquez", "Mariana Lozano", "Marco Camacho",
+  "Daniela Padilla", "Iván Pineda", "Fátima Gallardo", "Óscar Arias", "Regina Escobar",
+  "Ramón Cortés", "Brenda Palma", "Ernesto León", "Jimena Treviño", "Víctor Fuentes",
+  "Ariadna Meza", "Roberto Chávez", "Renata Luna", "Ángel Olvera", "Karina Godínez",
+  "Alonso Becerra", "Itzel Quiroz", "Sebastián Tapia", "Vanessa Benítez", "Tomás Rangel",
+  "Natalia Valdez", "Mauricio Bravo", "Ximena Serrano", "Cristian Calderón", "Leticia Mena",
+  "Elías Acosta", "Zaira Medina", "Gustavo Barrera", "Tania Duarte", "Armando Villegas",
+  "Jessica Rueda", "Leonardo Beltrán", "Rocío Solís", "Abel Márquez", "Lorena Espinosa",
+  "Bruno Téllez", "Alejandra Cuevas", "Isaac Sepúlveda", "Daniela Figueroa", "Jonathan Lara",
+  "Mónica Escamilla", "Adrián Arce", "Marisol Ledezma", "Matías Castañeda", "Perla Zamora",
+  "Guillermo Barajas", "Estefanía Murillo", "Jorge Saucedo", "Cynthia Manríquez", "Kevin Castaño",
+  "Aranza Bermúdez", "Rodrigo Villanueva", "Julia Tinoco", "Maximiliano Zúñiga", "Rebeca Lozoya",
+  "Jaime Sandoval", "Dafne Castañón", "Ulises Mondragón", "Melina Rojo", "Saúl Valenzuela",
+  "Claudia Puga", "Benjamín Galindo", "Lilia Bustos", "Mario Cárdenas", "Elena Llamas"
+];
 
-ESTADOS_MX = {
-    'Ags': ['ags'], 'BC': ['tj', 'mc'], 'BCS': ['lpz'], 'Camp': ['cam'],
-    'Coah': ['slc', 'tor'], 'Col': ['col'], 'Chis': ['tuxt'], 'Chih': ['chih', 'ju'],
-    'CDMX': ['cx'], 'Dgo': ['dgo'], 'Gto': ['leo', 'irapuato'], 'Gro': ['aca', 'chil'],
-    'Hgo': ['pach'], 'Jal': ['gd', 'zap'], 'Méx': ['tol', 'nez'], 'Mich': ['morelia'],
-    'Mor': ['cuernavaca'], 'Nay': ['tep'], 'NL': ['mty'], 'Oax': ['oax'],
-    'Qro': ['qro'], 'QR': ['cancun', 'chetumal'], 'SLP': ['slp'], 'Sin': ['cul', 'mochi'],
-    'Son': ['herm', 'nog'], 'Tab': ['villah'], 'Tamps': ['tampico', 'reynosa'],
-    'Tlax': ['tlax'], 'Ver': ['ver', 'coatza'], 'Yuc': ['mda'], 'Zac': ['zac']
-}
-
-RESPONSABLES = [
-    "NULL", "Juan Pérez", "María González", "José Hernández", "Ana Martínez", "Luis López",
-    "Laura Rodríguez", "Carlos Sánchez", "Sofía Ramírez", "Miguel Torres", "Lucía Flores"
-]
-
-def generar_identificador(estado, ciudad, fecha, lat, lng, secuencial):
-    dia = f"{fecha.day:02d}"
-    mes = f"{fecha.month:02d}"
+def generar_identificador(estado, ciudad, fecha, lat, lng, sec):
     lat_dos = str(int(abs(lat) * 100))[:2]
     lng_dos = str(int(abs(lng) * 100))[:2]
-    return f"{estado.lower()}{ciudad.lower()}{dia}{mes}{lat_dos}{lng_dos}{secuencial:03d}"
+    return f"{estado.lower()}{ciudad.lower()}{fecha.day:02d}{fecha.month:02d}{lat_dos}{lng_dos}{sec:03d}"
 
-def generar_luminaria(index, estado, ciudad):
-    lat = round(19.0 + random.uniform(-5, 5), 6)
-    lng = round(-99.0 + random.uniform(-5, 5), 6)
-    fecha_instalacion = fake.date_between(start_date='-2y', end_date='today')
-    identificador = generar_identificador(estado, ciudad, fecha_instalacion, lat, lng, index)
+
+def generar_luminaria(index):
+    estado, ciudades = random.choice(list(ESTADOS_MX.items()))
+    ciudad = random.choice(ciudades)
+    lat = round(19 + random.uniform(-5, 5), 6)
+    lng = round(-99 + random.uniform(-5, 5), 6)
+    fecha = fake.date_between(start_date='-2y', end_date='today')
 
     return {
-        "identificador": identificador,
+        "identificador": generar_identificador(estado, ciudad, fecha, lat, lng, index),
         "ubicacion": {
             "direccion": fake.address(),
             "coordenadas": { "lat": lat, "lng": lng }
@@ -90,32 +110,30 @@ def generar_luminaria(index, estado, ciudad):
             "vida_util_restante_pct": round(random.uniform(30.0, 90.0), 1)
         },
         "registro": {
-            "fecha_instalacion": fecha_instalacion.isoformat(),
+            "fecha_instalacion": fecha.isoformat(),
             "creado_por": "admin_sistema"
         }
     }
 
-def seed_luminarias_api(cantidad_total):
-    luminarias_batch = []
-    index = 1
+def enviar_batch(batch):
+    try:
+        r = requests.post(API_URL, json=batch)
+        if r.status_code not in [200, 201]:
+            print(f"\n Error: {r.status_code} - {r.text}")
+    except Exception as e:
+        print(f"\n Error en envío: {e}")
 
-    for _ in tqdm(range(cantidad_total), desc="Insertando luminarias"):
-        estado_abbr, ciudades = random.choice(list(ESTADOS_MX.items()))
-        ciudad_abbr = random.choice(ciudades)
-        luminaria = generar_luminaria(index, estado_abbr, ciudad_abbr)
-        luminarias_batch.append(luminaria)
-        index += 1
-
-        if len(luminarias_batch) >= BATCH_SIZE or index > cantidad_total:
-            try:
-                response = requests.post(f"{API_URL}/batch", json=luminarias_batch)
-                if response.status_code not in [200, 201]:
-                    print(f"\n❌ Error en lote: {response.status_code} - {response.text}")
-                luminarias_batch = []
-            except Exception as e:
-                print(f"\n🚨 Excepción en lote: {str(e)}")
+def generar_y_enviar_lotes():
+    with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
+        tasks = []
+        idx = 1
+        for _ in tqdm(range(TOTAL // BATCH_SIZE), desc="Enviando luminarias"):
+            batch = [generar_luminaria(idx + i) for i in range(BATCH_SIZE)]
+            idx += BATCH_SIZE
+            tasks.append(executor.submit(enviar_batch, batch))
+        for t in tasks:
+            t.result()
 
 if __name__ == "__main__":
-    cantidad = int(input("¿Cuántas luminarias deseas insertar? "))
-    seed_luminarias_api(cantidad)
-    print("✅ Proceso completado")
+    generar_y_enviar_lotes()
+    print("\n Inserción completada")
