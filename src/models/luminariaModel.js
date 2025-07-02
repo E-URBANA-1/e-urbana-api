@@ -18,7 +18,7 @@ const luminariaSchema = new Schema({
   altura_metros: Number,
   estado: {
     type: String,
-    enum: ['encendida', 'apagada', 'fallando','NULL'],
+    enum: ['encendida', 'apagada', 'fallando'],
     default: 'apagada'
   },
   horarios: {

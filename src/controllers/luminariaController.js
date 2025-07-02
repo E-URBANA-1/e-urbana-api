@@ -3,14 +3,30 @@ import luminariaDAO from "../dao/luminariaDao.js";
 const C = console.log.bind(console.log);
 
 // Obtener todas las luminarias
-export const getAllLuminarias = (req, res) => {
-    luminariaDAO.getAll()
-        .then(result => res.json(result))
-        .catch(err => {
-            console.error(err);
-            res.status(500).json({ status: "Server unavailable" });
+export const getAllLuminarias = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 1000;
+    const skip = (page - 1) * limit;
+
+    try {
+        const [data, total] = await Promise.all([
+            luminariaDAO.getPaginated(skip, limit),
+            luminariaDAO.countAll()
+        ]);
+
+        res.json({
+            total,
+            page,
+            limit,
+            pages: Math.ceil(total / limit),
+            data
         });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ status: "Server unavailable" });
+    }
 };
+
 
 // Obtener una luminaria por identificador
 export const getOneLuminaria = (req, res) => {

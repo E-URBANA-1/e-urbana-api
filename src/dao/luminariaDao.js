@@ -4,10 +4,14 @@ const C = console.log.bind(console.log)
 const luminariaDAO = {}
 
 // Obtener todas las luminarias (sin filtro)
-luminariaDAO.getAll = async () => {
-    const luminarias = await Luminaria.find()
-    return luminarias
-}
+luminariaDAO.getPaginated = async (skip, limit) => {
+    return await Luminaria.find().skip(skip).limit(limit).lean();
+};
+
+luminariaDAO.countAll = async () => {
+    return await Luminaria.countDocuments();
+};
+
 
 // Obtener una luminaria por su identificador (ID)
 luminariaDAO.getOne = async (identificador) => {

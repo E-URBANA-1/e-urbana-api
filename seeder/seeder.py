@@ -7,10 +7,11 @@ from concurrent.futures import ThreadPoolExecutor
 
 fake = Faker()
 
-API_URL = "http://localhost:3200/batch"  
-TOTAL = 800000
-BATCH_SIZE = 5000
-NUM_THREADS = 8
+API_URL = "http://localhost:3200/batch"
+TOTAL = 100000   
+BATCH_SIZE = 10000
+NUM_THREADS = 12
+
 
 ESTADOS_MX = {
     'Ags': ['ags'], 'BC': ['tj', 'mc'], 'BCS': ['lpz'], 'Camp': ['cam'],
@@ -20,14 +21,14 @@ ESTADOS_MX = {
     'Mor': ['cuernavaca'], 'Nay': ['tep'], 'NL': ['mty'], 'Oax': ['oax'],
     'Qro': ['qro'], 'QR': ['cancun', 'chetumal'], 'SLP': ['slp'], 'Sin': ['cul', 'mochi'],
     'Son': ['herm', 'nog'], 'Tab': ['villah'], 'Tamps': ['tampico', 'reynosa'],
-    'Tlax': ['tlax'], 'Ver': ['ver', 'coatza'], 'Yuc': ['mda'], 'Zac': ['zac'],'NULL': ['NULL']
+    'Tlax': ['tlax'], 'Ver': ['ver', 'coatza'], 'Yuc': ['mda'], 'Zac': ['zac']
 }
 
-TIPOS = ['LED', 'Halógena', 'Incandescente', 'NULL']
-ESTADOS = ['encendida', 'apagada', 'fallando', 'NULL']
-FIRMWARES = ['v1.0.0', 'v1.2.3', 'v2.0.1', 'NULL']
-ESTADOS_RED = ['estable', 'inestable', 'sin conexión', 'NULL']
-RESPONSABLES = [ "NULL",
+TIPOS = ['LED', 'Halógena', 'Incandescente']
+ESTADOS = ['encendida', 'apagada', 'fallando']
+FIRMWARES = ['v1.0.0', 'v1.2.3', 'v2.0.1']
+ESTADOS_RED = ['estable', 'inestable', 'sin conexión']
+RESPONSABLES = [
   "Juan Pérez", "María González", "José Hernández", "Ana Martínez", "Luis López",
   "Laura Rodríguez", "Carlos Sánchez", "Sofía Ramírez", "Miguel Torres", "Lucía Flores",
   "Diego Morales", "Camila Reyes", "Fernando Cruz", "Valeria Ortiz", "Javier Castillo",
@@ -48,13 +49,12 @@ RESPONSABLES = [ "NULL",
   "Aranza Bermúdez", "Rodrigo Villanueva", "Julia Tinoco", "Maximiliano Zúñiga", "Rebeca Lozoya",
   "Jaime Sandoval", "Dafne Castañón", "Ulises Mondragón", "Melina Rojo", "Saúl Valenzuela",
   "Claudia Puga", "Benjamín Galindo", "Lilia Bustos", "Mario Cárdenas", "Elena Llamas"
-];
+]
 
 def generar_identificador(estado, ciudad, fecha, lat, lng, sec):
     lat_dos = str(int(abs(lat) * 100))[:2]
     lng_dos = str(int(abs(lng) * 100))[:2]
     return f"{estado.lower()}{ciudad.lower()}{fecha.day:02d}{fecha.month:02d}{lat_dos}{lng_dos}{sec:03d}"
-
 
 def generar_luminaria(index):
     estado, ciudades = random.choice(list(ESTADOS_MX.items()))
@@ -67,13 +67,13 @@ def generar_luminaria(index):
         "identificador": generar_identificador(estado, ciudad, fecha, lat, lng, index),
         "ubicacion": {
             "direccion": fake.address(),
-            "coordenadas": { "lat": lat, "lng": lng }
+            "coordenadas": {"lat": lat, "lng": lng}
         },
         "tipo": random.choice(TIPOS),
         "potencia_watts": random.choice([50, 75, 100, 150]),
         "altura_metros": round(random.uniform(6.0, 10.0), 2),
         "estado": random.choice(ESTADOS),
-        "horarios": { "encendido": "18:00", "apagado": "06:00" },
+        "horarios": {"encendido": "18:00", "apagado": "06:00"},
         "consumo": {
             "actual_watts": round(random.uniform(40.0, 110.0), 2),
             "acumulado_kwh": {
@@ -82,7 +82,8 @@ def generar_luminaria(index):
                 "mes": round(random.uniform(20.0, 60.0), 2)
             },
             "historial": [
-                { "fecha": fake.date_time_between(start_date='-5d', end_date='now').isoformat(), "kwh": round(random.uniform(0.8, 1.6), 2) }
+                {"fecha": fake.date_time_between(start_date='-5d', end_date='now').isoformat(),
+                 "kwh": round(random.uniform(0.8, 1.6), 2)}
                 for _ in range(5)
             ]
         },
